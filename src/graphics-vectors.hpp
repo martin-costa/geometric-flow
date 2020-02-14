@@ -100,6 +100,8 @@ public:
   // R^2 vector operations
   friend double magnitude(Vector2 v);
 
+  friend double angle(Vector2 v);
+
   friend Vector2 normalize(Vector2 v);
 
   friend Vector2 schur(Vector2 v, Vector2 u);

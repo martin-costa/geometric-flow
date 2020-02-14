@@ -14,7 +14,7 @@
 int main();
 void mainLoop();
 
-Curve curve;
+std::vector<Curve> curves = std::vector<Curve>(0);
 
 sf::RenderWindow window;
 

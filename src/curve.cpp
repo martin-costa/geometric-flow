@@ -55,24 +55,26 @@ void Curve::addPoint(sf::Vector2f p) {
 }
 
 void Curve::draw(sf::RenderWindow* window) {
+  //window->draw(normals.data(), normals.size(), sf::Lines);
   window->draw(vertices.data(), vertices.size(), sf::LinesStrip);
 }
 
 void Curve::finishCurve() {
   this->vertices.push_back(vertices[0]);
   this->finished = true;
+
+  length = curveLength();
 }
 
-void Curve::update(double t) {
+bool Curve::update(double t) {
 
-  if (!finished) return;
+  if (!finished) return false;
 
   if (pointCount < 3) {
-    vertices = std::vector<sf::Vertex>(0);
-    pointCount = 0;
-    finished = true;
-    return;
+    return true;
   }
+
+  double kappaAverage = 0;
 
   for (int i = 0; i < pointCount; i++) {
 
@@ -82,7 +84,7 @@ void Curve::update(double t) {
       if (a < 3) removeVertex(i - 1);
       if (a > 6) addVertex(i, vectors[I(i - 1)] + (vectors[i] - vectors[I(i - 1)]) / 2.0);
 
-      if (pointCount < 3) return;
+      if (pointCount < 3) return true;
       a = magnitude(vectors[i] - vectors[I(i - 1)]);
     }
 
@@ -91,7 +93,7 @@ void Curve::update(double t) {
       if (b < 3) removeVertex(i + 1);
       if (b > 6) addVertex(i + 1, vectors[i] + (vectors[I(i + 1)] - vectors[i]) / 2.0);
 
-      if (pointCount < 3) return;
+      if (pointCount < 3) return true;
       b = magnitude(vectors[i] - vectors[I(i + 1)]);
     }
 
@@ -99,12 +101,12 @@ void Curve::update(double t) {
 
     // get the curvature
     double kappa = curvature(a, b, c);
-    Vector2 dir = normalize(vectors[I(i - 1)] - vectors[i]) + normalize(vectors[I(i + 1)] - vectors[i]);
-    double mag = magnitude(dir);
+    Vector2 normal = getNormal(vectors[I(i - 1)] - vectors[i], vectors[I(i + 1)] - vectors[i]);
 
     // move point in direction of curvature proportionally
-    if (mag > 0 && kappa > 0) {
-      vectors_temp[i] = normalize(dir) * t * kappa + vectors[i];
+    if (kappa > 0) {
+      vectors_temp[i] = normal * t * 2 * kappa + vectors[i];
+      kappaAverage += kappa;
     }
     else
       vectors_temp[i] = vectors[i];
@@ -117,7 +119,34 @@ void Curve::update(double t) {
     vertices[i].position = sf::Vector2f(vectors[i].x, vectors[i].y);
   }
 
+  kappaAverage /= (double)pointCount;
+
+  normals = std::vector<sf::Vertex>(pointCount * 2);
+
+  // enlarges the curve
+  if (curveLength() <= length) {
+    for (int i = 0; i < pointCount; i++) {
+
+      Vector2 back = vectors[I(i - 1)] - vectors[i];
+      Vector2 forward = vectors[I(i + 1)] - vectors[i];
+
+      Vector2 normal = leftNormal(forward, back);
+
+      vectors_temp[i] = normal * t * 2 * kappaAverage + vectors[i];
+
+      normals[i * 2 + 0] = sf::Vertex(sf::Vector2f(vectors[i].x, vectors[i].y), vertices[i].color);
+      normals[i * 2 + 1] = sf::Vertex(sf::Vector2f(vectors[i].x + normal.x * 10, vectors[i].y + normal.y * 10), sf::Color(0, 0, 0));
+    }
+
+    for (int i = 0; i < pointCount; i++) {
+      vectors[i] = vectors_temp[i];
+      vertices[i].position = sf::Vector2f(vectors[i].x, vectors[i].y);
+    }
+  }
+
   vertices[pointCount] = vertices[0];
+
+  return false;
 }
 
 // approximates the curvature at point (i) by computing the radius of the circle that goes through
@@ -127,6 +156,24 @@ double curvature(double a, double b, double c) {
   double s = (a + b + c) / 2.0;
   double A = sqrt(s * (s - a) * (s - b) * (s - c));
   return  (4.0 * A) / (a * b * c);
+}
+
+Vector2 leftNormal(Vector2 forward, Vector2 back) {
+
+  double theta = angle(back.rot(-angle(forward)));
+
+  if (theta >= PI) return normalize(forward.rot(theta / 2 - PI));
+  else return normalize(-forward.rot(theta / 2));
+}
+
+Vector2 RightNormal(Vector2 forward, Vector2 back);
+
+Vector2 getNormal(Vector2 forward, Vector2 back) {
+
+  double theta = angle(back.rot(-angle(forward)));
+
+  if (theta >= PI) return normalize(forward.rot(theta / 2 - PI));
+  else return normalize(forward.rot(theta / 2));
 }
 
 sf::Color Curve::getColor(double kappa) {

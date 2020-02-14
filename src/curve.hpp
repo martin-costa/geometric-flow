@@ -2,7 +2,11 @@
 #include <vector>
 #include <algorithm>
 
+#include <iostream>
+
 #include "graphics-vectors.hpp"
+
+#define PI 3.14159
 
 // create a curve object
 class Curve {
@@ -12,7 +16,11 @@ private:
 
   bool finished = false;
 
+  double length = 0;
+
   std::vector<sf::Vertex> vertices;
+
+  std::vector<sf::Vertex> normals;
 
   std::vector<Vector2> vectors;
   std::vector<Vector2> vectors_temp;
@@ -41,7 +49,13 @@ public:
 
   void finishCurve();
 
-  void update(double t);
+  bool update(double t);
 };
 
 double curvature(double a, double b, double c);
+
+Vector2 leftNormal(Vector2 forward, Vector2 back);
+
+Vector2 RightNormal(Vector2 forward, Vector2 back);
+
+Vector2 getNormal(Vector2 forward, Vector2 back);

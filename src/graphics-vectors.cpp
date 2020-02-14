@@ -189,6 +189,13 @@ double magnitude(Vector2 v) {
   return sqrt(v.x * v.x + v.y * v.y);
 }
 
+double angle(Vector2 v) {
+  double angle = atan2(v.y, v.x);
+
+  if (angle < 0) angle += 2*3.14159265359;
+  return angle;
+}
+
 Vector2 normalize(Vector2 v) {
    return v / magnitude(v);
 }
@@ -217,7 +224,7 @@ Vector2 Vector2::schur(Vector2 v) {
 }
 
 Vector2 Vector2::rot(double theta) {
-  return Vector2(x * cos(theta) - y * sin(theta), y * sin(theta) + x * cos(theta));
+  return Vector2(x * cos(theta) - y * sin(theta), x * sin(theta) + y * cos(theta));
 }
 
 // overload stream operator

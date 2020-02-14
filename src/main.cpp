@@ -29,27 +29,33 @@ int main() {
 
 void mainLoop() {
 
+  // std::cout << "\r" << curves.size() << "     ";
+
   static sf::Vector2i pos = mouse.pos();
 
   static bool makingCurve = false;
   if (mouse.clicked()) {
     makingCurve = true;
-    curve = Curve();
+    curves.push_back(Curve());
   }
 
   if (mouse.down()) {
     if (pos != mouse.pos()) {
       pos = mouse.pos();
-      curve.addPoint(pos.x, HEIGHT - pos.y);
+      curves.back().addPoint(pos.x, HEIGHT - pos.y);
     }
   }
   else if (makingCurve) {
     makingCurve = false;
-    curve.finishCurve();
+    curves.back().finishCurve();
   }
 
-  if (!makingCurve) curve.update(1);
+  for (int i = 0; i < curves.size(); i++) {
+    if (curves[i].update(1)) curves.erase(curves.begin() + i);
+    curves[i].draw(&window);
+  }
 
-  // std::cout << curve.curveLength() << std::endl;
-  curve.draw(&window);
+  for (int i = 0; i < curves.size(); i++) {
+    curves[i].draw(&window);
+  }
 }
